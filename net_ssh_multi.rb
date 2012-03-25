@@ -16,40 +16,30 @@ end
 
 $resultat = File.open("_temps_net_ssh","a")
 
-
 def connect(i)
-tdeb = Time.now
+	tdeb = Time.now
 	Net::SSH::Multi.start(:concurrent_connections =>80) do |session|
-
+		
+		nbGateway = 10
 		session.via $tab_host[0].to_s, 'root', :paranoid => Net::SSH::Verifiers::Null.new
-		for k in 10..i/4 do
-			session.use $tab_host[k].to_s, :user => "root",:paranoid => Net::SSH::Verifiers::Null.new, :forward_agent => "false", :via => nil
+		for k in nbGateway..i/nbGateway do
+			session.use $tab_host[k].to_s, :user => "root", :paranoid => Net::SSH::Verifiers::Null.new, :via => nil
 		end
-	
-		session.via $tab_host[1].to_s, 'root', :paranoid => Net::SSH::Verifiers::Null.new
-		for k in i/4+1..2*i/4 do
-			session.use $tab_host[k].to_s, :user => "root",:paranoid => Net::SSH::Verifiers::Null.new, :forward_agent => "false", :via => nil
+		
+		for j in 2..nbGateway do
+			session.via $tab_host[j-1].to_s, 'root', :paranoid => Net::SSH::Verifiers::Null.new
+			for k in i/nbGateway+1..i*j/nbGateway do
+				session.use $tab_host[k].to_s, :user => "root", :paranoid => Net::SSH::Verifiers::Null.new, :via => nil
+			end
 		end
-
-        	session.via $tab_host[2].to_s, 'root', :paranoid => Net::SSH::Verifiers::Null.new
-	        for k in i*1/2+1..3*i/4 do
-	                session.use $tab_host[k].to_s, :user => "root",:paranoid => Net::SSH::Verifiers::Null.new, :forward_agent => "false", :via => nil
-	        end
-
-        	session.via $tab_host[3].to_s, 'root', :paranoid => Net::SSH::Verifiers::Null.new
-	        for k in i*3/4+1..i do
-	                session.use $tab_host[k].to_s, :user => "root",:paranoid => Net::SSH::Verifiers::Null.new, :forward_agent => "false", :via => nil
-	        end
 		session.exec "hostname"
 	end
-tfin = Time.now
-tdiff = tfin -tdeb
-puts(tdiff.to_s)
-$resultat.write(tdiff.to_s+"\n")
+	tfin = Time.now
+	tdiff = tfin -tdeb
+	puts(tdiff.to_s)
+	$resultat.write(tdiff.to_s+"\n")
 end
 
-for i in 0..5 do
-	connect(1000)
-end
+connect(1000)
 $resultat.close
 
