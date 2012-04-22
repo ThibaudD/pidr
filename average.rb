@@ -12,9 +12,9 @@ def ecart_type(tab)
 	var = 0
 	average = average(tab)
 	for t in tab do
-		var = var + (t - average)
+		var = var + (t - average)**2
 	end	
-	ecart_type = Math.sqrt(esperance2-esperance1)
+	ecart_type = Math.sqrt(var/tab.length)
 end
 
 def confidence_interval(tab)
