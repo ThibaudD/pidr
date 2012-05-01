@@ -13,16 +13,11 @@ if ARGV.length != 3
 end
 
 $tab_host = []
-machine = File.open("../machines",'r')
+machine = File.open("machines",'r')
 machine.each do |ligne|
         $tab_host << ligne.chomp
 end
 
-nb_machines = ARGV[0]
-nb_gateways = ARGV[1]
-window_size = ARGV[2]
-nom = "temps_net_ssh_multi_n_#{nb_machines}_g_#{nb_gateways}_w_#{window_size}.txt"
-$resultat = File.open(nom,"a")
 
 def connect(i,gateway,window)
 	tdeb = Time.now
@@ -55,6 +50,11 @@ def connect(i,gateway,window)
 	$resultat.write(tdiff.to_s+"\n")
 end
 
-connect(nb_machines.to_i, nb_gateways.to_i,window_size.to_i)
+nb_machines = ARGV[0].to_i
+nb_gateways = ARGV[1].to_i
+window_size = ARGV[2].to_i
+nom = "temps_net_ssh_multi_n_#{nb_machines}_g_#{nb_gateways}_w_#{window_size}.txt"
+$resultat = File.open(nom,"a")
+connect(nb_machines, nb_gateways,window_size)
 $resultat.close
 
