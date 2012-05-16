@@ -15,6 +15,7 @@ get '/connect' do
 	$session = Net::SSH::Multi.start(:concurrent_connections => 2)
 	$session.via $host, $username
 	$session.use $frontend, :user => $username, :password => $password
+
 end
 
 get '/reserve' do
@@ -22,27 +23,41 @@ get '/reserve' do
 	number_nodes = params[:nodes].to_i
 	walltime = params[:walltime].to_i
 	date = params[:date]
+	$session.exec("date +'%G-%m-%d %H:%M:%S'") do |channel, stream, data|
+		date = data.chomp
+	end
+	$session.loop
+	p date
 	hour = params[:hour]
 	command = ""
-	if(date!=nil)
-		command= "oarsub -r #{date} nodes=#{number_nodes},walltime=#{walltime}"
-	else
-		command = "oarsub -I -l nodes=#{number_nodes},walltime=#{walltime}"
-	end
+		command= "oarsub -r '#{date}' -t allow_classic_ssh -l nodes=#{number_nodes},walltime=#{walltime}"
+	p command
+
+#		$session.exec("#{command} | grep \"Connect to OAR job\" | cut -d ' ' -f9") do |channel, stream, data|
 		$session.exec("#{command} | grep \"OAR_JOB_ID\" | cut -d '=' -f2") do |channel, stream, data|
-			$oar_job_id = data
-		end
-		puts $oar_job_id
-		$session.exec("cat $OAR_NODE_FILE | uniq") do |channel, stream, data|
-			puts "stream : #{stream}"
-			$nodes =  data.split("\n")
+#$session.exec(command) do |channel,stream,data|
+			puts stream
+			$oar_job_id = data.to_i
 		end
 		$session.loop
+		$session.exec("sleep 9")
+		$session.loop
+		p $oar_job_id
+
+		stat = "oarstat -fj '#{$oar_job_id}' | grep assigned_hostnames | tr -d ' ' | cut -d '=' -f2"
+		$session.exec(stat) do |channel, stream, data|
+			puts "stream : #{stream}"
+			$nodes =  data.chomp.split('+')
+		end
+		$session.loop
+		puts "test"
+		p $nodes
+		$session.loop
 		$session.group :nodes do
-			$session.via $frontend, :user => $username, :password => $password
-			$session.use $nodes, :user => $username, :password => $password
+			$nodes.each do |node|
+				$session.use node, :user => $username, :password => $password
+			end
 		end	
-		$session.exec(command)
 end
 
 get '/lauch' do
