@@ -14,7 +14,6 @@ $oar_array = []
 get '/connect' do
 	username = params[:username]
 	password = params[:password]
-	password="3751Gr!d"
 	frontend = params[:frontend]
 
 	session = Session.new(username,password,frontend)
