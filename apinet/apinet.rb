@@ -15,7 +15,6 @@ get '/connect' do
 	username = params[:username]
 	password = params[:password]
 	frontend = params[:frontend]
-
 	session = Session.new(username,password,frontend)
 	session.connect(10)
 
@@ -36,13 +35,15 @@ get '/reserve' do
 	minute = params[:M]
 	second = params[:S]
 	session_number = params[:s].to_i
+	command = params[:command]
+	if command==nil then command="" end
 
 	session = $session_array[session_number]
 
 	if year==nil&&month==nil&&day==nil then
 		oar = OAR.new(session.getSession,nb_nodes,walltime)
 	else
-		oar = OAR.new(session.getSession,nb_nodes,walltime,year,day,month,hour,minute,second)
+		oar = OAR.new(session.getSession,nb_nodes,walltime,year,day,month,hour,minute,second,command)
 	end
 
 	oar.sub
@@ -52,13 +53,19 @@ get '/reserve' do
 		end
 	end	
 	$oar_array << oar
-
-	oar_hash = {'id' => oar.job_id, 'date' => oar.date, 'nb_nodes' => oar.nb_nodes, 'walltime' => oar.walltime, 'nodes' => oar.nodes}
+	oar_number = $oar_array.length-1
+	oar_hash = {'id' => oar.job_id, 'date' => oar.date, 'nb_nodes' => oar.nb_nodes, 'walltime' => oar.walltime, 'nodes' => oar.nodes, 'number' => oar_number}
 	
 	"#{oar_hash.to_json}"
 end
 
-get '/lauch' do
+get '/delete' do
+	oar_number = params[:oar].to_i
+	oar = $oar_array[oar_number]
+	oar.delete
+end
+
+get '/launch' do
 	command = params[:command]
 	session_number = params[:s].to_i
 	result = ""
@@ -80,7 +87,7 @@ get '/lauch' do
 	end
 	session.getSession.loop
 	
-	command_hash = {'command' => command, 'result_array' => result, 'result' => result}	
+	command_hash = {'command' => command, 'result_array' => result_array, 'result' => result}	
 	"#{command_hash.to_json}"
 		
 end

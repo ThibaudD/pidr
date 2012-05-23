@@ -6,16 +6,17 @@ require 'net/ssh'
 require 'net/ssh/multi'
 
 class OAR
-	attr_accessor :session, :nb_nodes, :walltime, :date, :command, :job_id, :nodes, :name
+	attr_accessor :session, :nb_nodes, :walltime, :date, :command, :job_id, :nodes, :name, :command_line
 	
-	def initialize(session,nb_nodes,walltime,year,day,month,hour,minute,second)
+	def initialize(session,nb_nodes,walltime,year,day,month,hour,minute,second,command)
 		@session = session
 		@nb_nodes = nb_nodes
 		@walltime = walltime
 		@date = "#{year}-#{day}-#{month} #{hour}:#{minute}:#{second}"
-		@command = "oarsub -r '#{@date}' -t allow_classic_ssh -l nodes=#{nb_nodes},walltime=#{walltime}"
+		if(command==nil) then @command="" end
+		@command_line = "oarsub -r '#{@date}' -t allow_classic_ssh -l nodes=#{nb_nodes},walltime=#{walltime} #{@command}"
 	end
-	
+
 	def initialize(session,nb_nodes,walltime)
 		@session = session
 		@nb_nodes = nb_nodes
@@ -25,11 +26,11 @@ class OAR
                 	@date = data.chomp
        		 end
         	@session.loop
-		@command= "oarsub -r '#{@date}' -t allow_classic_ssh -l nodes=#{nb_nodes},walltime=#{walltime}"
+		@command_line = "oarsub -r '#{@date}' -t allow_classic_ssh -l nodes=#{nb_nodes},walltime=#{walltime}"
 	end
 	
 	def sub
-		 @session.with(:frontend).exec("#{@command} | grep \"OAR_JOB_ID\" | cut -d '=' -f2") do |channel, stream, data|	
+		 @session.with(:frontend).exec("#{@command_line} | grep \"OAR_JOB_ID\" | cut -d '=' -f2") do |channel, stream, data|	
 			@job_id = data.to_i
 			channel.wait
 			p @job_id
@@ -43,6 +44,13 @@ class OAR
 			p @nodes
                 end
                 @session.loop
+	end
+	
+	def delete
+		@session.with(:frontend).exec("oardel #{@job_id}") do |channel, stream, data|
+			puts data
+		end
+		@session.loop	
 	end
 
 	def getNodes
