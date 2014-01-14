@@ -1,0 +1,5 @@
+In this project, we had two goals.
+The first one was to compare the different SSH libraries (netSSH in Ruby, Paramiko in Python) and TakTuk which use a Perl library.
+We used the Grid'5000 a scientific instrument for the study of large scale parallel and distributed systems.
+
+The second goal was to program an REST API using Sinatra (a Ruby framework) for deploying nodes and for controlling them on the Grid'5000.
